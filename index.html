@@ -392,69 +392,85 @@
             const channelData = buffer.getChannelData(0);
             const beats = [];
             
-            // Better beat detection focusing on actual rhythmic elements
+            // Dual detection: soft notes (piano, melodic) + hard beats (vocals, drums)
             const windowSize = Math.floor(sampleRate * 0.1); // 100ms window
             const hopSize = Math.floor(sampleRate * 0.05); // 50ms hop
             
-            // Track overall energy and per-band energy
             const energyHistory = [];
-            const bandHistory = [[], [], [], []];
             const historySize = 40;
+            let prevEnergy = 0;
             
             for (let i = 0; i < channelData.length - windowSize; i += hopSize) {
                 const time = i / sampleRate;
                 
-                // Calculate overall energy for beat detection
-                let totalEnergy = 0;
+                // Calculate energy
+                let energy = 0;
                 for (let j = i; j < i + windowSize; j++) {
-                    totalEnergy += channelData[j] * channelData[j];
+                    energy += channelData[j] * channelData[j];
                 }
-                totalEnergy = Math.sqrt(totalEnergy / windowSize);
+                energy = Math.sqrt(energy / windowSize);
                 
-                energyHistory.push(totalEnergy);
+                energyHistory.push(energy);
                 if (energyHistory.length > historySize) {
                     energyHistory.shift();
                 }
                 
-                // Calculate average and variance
+                if (energyHistory.length < historySize / 2) {
+                    prevEnergy = energy;
+                    continue;
+                }
+                
                 const avgEnergy = energyHistory.reduce((a, b) => a + b, 0) / energyHistory.length;
                 const variance = energyHistory.reduce((sum, e) => sum + Math.pow(e - avgEnergy, 2), 0) / energyHistory.length;
-                const threshold = avgEnergy + Math.sqrt(variance) * 1.5;
+                const stdDev = Math.sqrt(variance);
                 
-                // Detect strong beats (like vocal emphasis, drum hits, etc)
-                if (totalEnergy > threshold && energyHistory.length >= historySize / 2) {
-                    // Split into 4 frequency bands to determine lane
+                // Two types of detection:
+                // 1. Strong beats (vocals, drums, emphasis) - high threshold
+                const strongThreshold = avgEnergy + stdDev * 1.5;
+                // 2. Soft notes (piano, sustained notes) - detect changes
+                const softThreshold = avgEnergy * 0.3; // Minimum energy level
+                const changeThreshold = 1.2; // 20% increase from previous
+                
+                let isStrongBeat = energy > strongThreshold;
+                let isSoftNote = energy > softThreshold && energy > prevEnergy * changeThreshold && prevEnergy > 0;
+                
+                if (isStrongBeat || isSoftNote) {
+                    // Determine lane based on frequency content
                     const bandSize = Math.floor(windowSize / 4);
                     let maxEnergy = 0;
                     let maxBand = 0;
                     
                     for (let band = 0; band < 4; band++) {
-                        let energy = 0;
+                        let bandEnergy = 0;
                         const start = i + (band * bandSize);
                         const end = start + bandSize;
                         
                         for (let j = start; j < end; j++) {
-                            energy += Math.abs(channelData[j]);
+                            bandEnergy += Math.abs(channelData[j]);
                         }
                         
-                        if (energy > maxEnergy) {
-                            maxEnergy = energy;
+                        if (bandEnergy > maxEnergy) {
+                            maxEnergy = bandEnergy;
                             maxBand = band;
                         }
                     }
                     
-                    // Avoid stacking too many notes at once
-                    // Check if any lane has a note within 0.15 seconds
+                    // Check timing constraints
                     const recentNotes = beats.filter(b => Math.abs(b.time - time) < 0.15);
+                    const lastInLane = beats.filter(b => b.lane === maxBand).pop();
                     
-                    if (recentNotes.length < 2) { // Max 2 simultaneous notes
-                        // Make sure this lane doesn't have a very recent note
-                        const lastInLane = beats.filter(b => b.lane === maxBand).pop();
-                        if (!lastInLane || time - lastInLane.time > 0.25) {
+                    // Allow more notes for soft detection, fewer for strong
+                    const maxSimultaneous = isStrongBeat ? 2 : 1;
+                    const minGap = isStrongBeat ? 0.25 : 0.3;
+                    
+                    if (recentNotes.length < maxSimultaneous) {
+                        if (!lastInLane || time - lastInLane.time > minGap) {
                             beats.push({ time, lane: maxBand, id: beats.length, hit: false });
                         }
                     }
                 }
+                
+                prevEnergy = energy;
             }
             
             return beats;
