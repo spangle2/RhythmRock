@@ -500,29 +500,30 @@
             return beats;
         }
 
-        // Real FFT implementation
+        // Real FFT implementation (optimized)
         function realFFT(signal, sampleRate) {
             const n = signal.length;
             const spectrum = new Array(n / 2).fill(0);
             
-            // Compute FFT using DFT (simplified for speed)
-            const step = Math.floor(n / 256); // Sample fewer frequencies for speed
+            // Much faster: only compute every 8th frequency bin
+            const step = 8;
             
             for (let k = 0; k < n / 2; k += step) {
                 let real = 0;
                 let imag = 0;
                 
-                for (let t = 0; t < n; t++) {
+                // Sample fewer time points for speed
+                const timeStep = 4;
+                for (let t = 0; t < n; t += timeStep) {
                     const angle = (-2 * Math.PI * k * t) / n;
                     real += signal[t] * Math.cos(angle);
                     imag += signal[t] * Math.sin(angle);
                 }
                 
-                const magnitude = Math.sqrt(real * real + imag * imag) / n;
-                spectrum[k] = magnitude;
+                const magnitude = Math.sqrt(real * real + imag * imag) / (n / timeStep);
                 
-                // Fill in the gaps
-                for (let j = 1; j < step && k + j < spectrum.length; j++) {
+                // Fill in the spectrum
+                for (let j = 0; j < step && k + j < spectrum.length; j++) {
                     spectrum[k + j] = magnitude;
                 }
             }
