@@ -392,48 +392,66 @@
             const channelData = buffer.getChannelData(0);
             const beats = [];
             
-            // Much faster, simpler beat detection
+            // Better beat detection focusing on actual rhythmic elements
             const windowSize = Math.floor(sampleRate * 0.1); // 100ms window
             const hopSize = Math.floor(sampleRate * 0.05); // 50ms hop
             
-            // Track energy history for each frequency band
+            // Track overall energy and per-band energy
+            const energyHistory = [];
             const bandHistory = [[], [], [], []];
-            const historySize = 20;
+            const historySize = 40;
             
             for (let i = 0; i < channelData.length - windowSize; i += hopSize) {
                 const time = i / sampleRate;
                 
-                // Split window into 4 frequency bands (simulate bass, low, mid, high)
-                const bandSize = Math.floor(windowSize / 4);
+                // Calculate overall energy for beat detection
+                let totalEnergy = 0;
+                for (let j = i; j < i + windowSize; j++) {
+                    totalEnergy += channelData[j] * channelData[j];
+                }
+                totalEnergy = Math.sqrt(totalEnergy / windowSize);
                 
-                for (let band = 0; band < 4; band++) {
-                    let energy = 0;
-                    const start = i + (band * bandSize);
-                    const end = start + bandSize;
+                energyHistory.push(totalEnergy);
+                if (energyHistory.length > historySize) {
+                    energyHistory.shift();
+                }
+                
+                // Calculate average and variance
+                const avgEnergy = energyHistory.reduce((a, b) => a + b, 0) / energyHistory.length;
+                const variance = energyHistory.reduce((sum, e) => sum + Math.pow(e - avgEnergy, 2), 0) / energyHistory.length;
+                const threshold = avgEnergy + Math.sqrt(variance) * 1.5;
+                
+                // Detect strong beats (like vocal emphasis, drum hits, etc)
+                if (totalEnergy > threshold && energyHistory.length >= historySize / 2) {
+                    // Split into 4 frequency bands to determine lane
+                    const bandSize = Math.floor(windowSize / 4);
+                    let maxEnergy = 0;
+                    let maxBand = 0;
                     
-                    // Calculate energy for this band
-                    for (let j = start; j < end; j++) {
-                        energy += channelData[j] * channelData[j];
+                    for (let band = 0; band < 4; band++) {
+                        let energy = 0;
+                        const start = i + (band * bandSize);
+                        const end = start + bandSize;
+                        
+                        for (let j = start; j < end; j++) {
+                            energy += Math.abs(channelData[j]);
+                        }
+                        
+                        if (energy > maxEnergy) {
+                            maxEnergy = energy;
+                            maxBand = band;
+                        }
                     }
-                    energy = Math.sqrt(energy / bandSize);
                     
-                    // Keep history for this band
-                    bandHistory[band].push(energy);
-                    if (bandHistory[band].length > historySize) {
-                        bandHistory[band].shift();
-                    }
+                    // Avoid stacking too many notes at once
+                    // Check if any lane has a note within 0.15 seconds
+                    const recentNotes = beats.filter(b => Math.abs(b.time - time) < 0.15);
                     
-                    // Calculate average energy for this band
-                    const avgEnergy = bandHistory[band].reduce((a, b) => a + b, 0) / bandHistory[band].length;
-                    
-                    // Beat detected if energy is significantly above average
-                    const threshold = band > 1 ? 1.3 : 1.5; // Lower threshold for high frequencies
-                    
-                    if (energy > avgEnergy * threshold && bandHistory[band].length >= historySize / 2) {
-                        // Check if we already have a recent note in this lane
-                        const lastInLane = beats.filter(b => b.lane === band).pop();
-                        if (!lastInLane || time - lastInLane.time > 0.2) {
-                            beats.push({ time, lane: band, id: beats.length, hit: false });
+                    if (recentNotes.length < 2) { // Max 2 simultaneous notes
+                        // Make sure this lane doesn't have a very recent note
+                        const lastInLane = beats.filter(b => b.lane === maxBand).pop();
+                        if (!lastInLane || time - lastInLane.time > 0.25) {
+                            beats.push({ time, lane: maxBand, id: beats.length, hit: false });
                         }
                     }
                 }
