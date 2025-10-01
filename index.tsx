@@ -30,7 +30,7 @@ export default function RhythmGame() {
 
   const loadSongs = async () => {
     setLoading(true);
-    const songFiles = ['song1.mp3', 'song2.mp3', 'song3.mp3'];
+    const songFiles = ['song1.mp3'];
     const loadedSongs = [];
 
     for (let i = 0; i < songFiles.length; i++) {
