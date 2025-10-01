@@ -392,33 +392,67 @@
             const channelData = buffer.getChannelData(0);
             const beats = [];
             
-            const windowSize = Math.floor(sampleRate * 0.05);
-            const hopSize = Math.floor(windowSize / 2);
-            const threshold = 0.3;
+            // Separate frequency analysis
+            const fftSize = 2048;
+            const freqBands = 4; // One for each lane
+            const windowSize = Math.floor(sampleRate * 0.02); // 20ms window
+            const hopSize = Math.floor(windowSize / 4);
             
-            let prevEnergy = 0;
-            
-            for (let i = 0; i < channelData.length - windowSize; i += hopSize) {
-                let energy = 0;
+            for (let i = 0; i < channelData.length - fftSize; i += hopSize) {
+                // Get frequency data for this window
+                const windowData = channelData.slice(i, i + fftSize);
+                const freqData = fft(windowData);
                 
-                for (let j = 0; j < windowSize; j++) {
-                    energy += Math.abs(channelData[i + j]);
-                }
-                energy /= windowSize;
+                // Split into frequency bands (bass, low-mid, high-mid, treble)
+                const bandSize = Math.floor(freqData.length / freqBands);
+                const bandEnergies = [];
                 
-                if (energy > threshold && energy > prevEnergy * 1.5) {
-                    const time = i / sampleRate;
-                    const lane = Math.floor(Math.random() * 4);
+                for (let band = 0; band < freqBands; band++) {
+                    let energy = 0;
+                    const start = band * bandSize;
+                    const end = start + bandSize;
                     
-                    if (beats.length === 0 || time - beats[beats.length - 1].time > 0.2) {
-                        beats.push({ time, lane, id: beats.length, hit: false });
+                    for (let j = start; j < end; j++) {
+                        energy += freqData[j];
                     }
+                    bandEnergies.push(energy / bandSize);
                 }
                 
-                prevEnergy = energy;
+                // Check each frequency band for peaks
+                const time = i / sampleRate;
+                bandEnergies.forEach((energy, lane) => {
+                    // Lower threshold for higher frequencies to capture more high notes
+                    const threshold = lane > 2 ? 0.15 : 0.25;
+                    
+                    if (energy > threshold) {
+                        // Avoid notes too close together in same lane
+                        const lastInLane = beats.filter(b => b.lane === lane).pop();
+                        if (!lastInLane || time - lastInLane.time > 0.15) {
+                            beats.push({ time, lane, id: beats.length, hit: false });
+                        }
+                    }
+                });
             }
             
-            return beats;
+            return beats.sort((a, b) => a.time - b.time);
+        }
+        
+        // Simple FFT approximation for frequency analysis
+        function fft(samples) {
+            const n = samples.length;
+            const result = new Array(n / 2).fill(0);
+            
+            for (let k = 0; k < n / 2; k++) {
+                let real = 0, imag = 0;
+                for (let t = 0; t < n; t++) {
+                    const angle = (2 * Math.PI * k * t) / n;
+                    real += samples[t] * Math.cos(angle);
+                    imag -= samples[t] * Math.sin(angle);
+                }
+                result[k] = Math.sqrt(real * real + imag * imag) / n;
+            }
+            
+            return result;
         }
 
         function displaySongs() {
