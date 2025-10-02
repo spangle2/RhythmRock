@@ -399,10 +399,10 @@
             
             // Frequency bands (Hz ranges)
             const bands = [
-                { name: 'bass', min: 0, max: 200, lane: 0 },      // Bass/kick drums
-                { name: 'low', min: 200, max: 500, lane: 1 },     // Snare/low toms
-                { name: 'mid', min: 500, max: 2000, lane: 2 },    // Vocals/guitars
-                { name: 'high', min: 2000, max: 8000, lane: 3 }   // Hi-hats/cymbals/piano
+                { name: 'bass', min: 20, max: 250, lane: 0 },      // Sub-bass and bass/kick drums
+                { name: 'low', min: 250, max: 500, lane: 1 },      // Snare/toms
+                { name: 'mid', min: 500, max: 2000, lane: 2 },     // Vocals/guitars/keys
+                { name: 'high', min: 2000, max: 6000, lane: 3 }    // Hi-hats/cymbals/high percussion
             ];
             
             const bandHistories = bands.map(() => []);
