@@ -340,11 +340,16 @@
         window.addEventListener('load', loadSongs);
 
         async function loadSongs() {
-            const songFiles = ['song1.mp3', 'song2.mp3', 'song3.mp3','song4.mp3'];
+            const songConfig = [
+                { file: 'song1.mp3', name: 'In The End - Linkin Park', image: 'img1.png' },
+                { file: 'song2.mp3', name: 'Song 2 Name', image: 'img2.png' },
+                { file: 'song3.mp3', name: 'Song 3 Name', image: 'img3.png' },
+                { file: 'song4.mp3', name: 'Goofy Goober Rock! - Spongebob', image: 'img4.png' }
+            ];
             
-            for (let i = 0; i < songFiles.length; i++) {
+            for (let i = 0; i < songConfig.length; i++) {
                 try {
-                    const file = songFiles[i];
+                    const file = songConfig[i].file;
                     const audio = new Audio(file);
                     
                     await new Promise((resolve, reject) => {
@@ -357,8 +362,9 @@
                     
                     songs.push({
                         id: i + 1,
-                        name: `Song ${i + 1}`,
+                        name: songConfig[i].name,
                         file: file,
+                        image: songConfig[i].image,
                         duration: audio.duration,
                         notes: beats,
                         difficulty: beats.length < 50 ? 'Easy' : beats.length < 100 ? 'Medium' : 'Hard'
@@ -564,9 +570,12 @@
                 card.className = 'song-card';
                 card.onclick = () => startGame(song);
                 card.innerHTML = `
-                    <div class="song-name">${song.name}</div>
-                    <div class="song-info">
-                        Difficulty: ${song.difficulty} • ${Math.floor(song.duration)}s • ${song.notes.length} notes
+                    <img src="${song.image}" style="width: 80px; height: 80px; border-radius: 8px; float: left; margin-right: 20px; object-fit: cover;">
+                    <div style="overflow: hidden;">
+                        <div class="song-name">${song.name}</div>
+                        <div class="song-info">
+                            Difficulty: ${song.difficulty} • ${Math.floor(song.duration)}s • ${song.notes.length} notes
+                        </div>
                     </div>
                 `;
                 songList.appendChild(card);
