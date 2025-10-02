@@ -36,6 +36,33 @@
             max-width: 800px;
             margin: 0 auto;
         }
+        
+        .song-list-container {
+            max-height: 400px;       /* adjust height to fit your menu */
+            overflow-y: auto;        /* vertical scroll */
+            padding-right: 10px;     /* spacing for scrollbar */
+            scroll-behavior: smooth; /* smooth scrolling */
+        }
+
+        /* Custom scrollbar */
+        .song-list-container::-webkit-scrollbar {
+                width: 10px;
+        }
+
+        .song-list-container::-webkit-scrollbar-track {
+                background: #111;
+                border-radius: 5px;
+        }
+
+        .song-list-container::-webkit-scrollbar-thumb {
+                background: #fff;
+                border-radius: 5px;
+        }
+
+        .song-list-container::-webkit-scrollbar-thumb:hover {
+                background: #ccc;
+        }
+
 
         .title {
             text-align: center;
@@ -269,18 +296,21 @@
 <body>
     <!-- Menu Screen -->
     <div id="menu-screen" class="active">
-        <div id="loading-indicator" class="loading">
-            <div class="spinner"></div>
-            <p style="font-size: 20px;">Loading...</p>
-        </div>
-        <div id="menu-content" style="display: none;">
-            <div class="menu-container">
-                <img id="title-img" src="title.png" alt="Rhythm Rock!">
-                <p class="subtitle">Select a song to begin</p>
+    <div id="loading-indicator" class="loading">
+        <div class="spinner"></div>
+        <p style="font-size: 20px;">Loading...</p>
+    </div>
+    <div id="menu-content" style="display: none;">
+        <div class="menu-container">
+            <img id="title-img" src="title.png" alt="Rhythm Rock!">
+            <p class="subtitle">Select a song to begin</p>
+            <div class="song-list-container">
                 <div id="song-list" class="song-list"></div>
             </div>
         </div>
     </div>
+</div>
+
 
     <!-- Game Screen -->
     <div id="game-screen">
