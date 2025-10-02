@@ -335,6 +335,7 @@
         let audioContext = null;
         let analyser = null;
         let waveformData = null;
+        let lightningBolts = [];
 
         // Initialize
         window.addEventListener('load', loadSongs);
@@ -670,6 +671,19 @@
             }
         }
 
+        function generateLightningPath() {
+            const segments = [];
+            const numSegments = 8 + Math.floor(Math.random() * 4);
+    
+            for (let i = 0; i < numSegments; i++) {
+                segments.push({
+                    x: (Math.random() - 0.5) * 0.3,
+                    y: i / numSegments
+                });
+            }
+            return segments;
+        }
+
         function endGame() {
             if (audioElement) {
                 audioElement.pause();
@@ -734,6 +748,15 @@
                 playHitSound(laneIndex, isPerfect);
 
                 closestNote.hit = true;
+
+                if (isPerfect && closestNote.intensity && closestNote.intensity > 1.5) {
+                    lightningBolts.push({
+                        id: Date.now(),
+                        lane: laneIndex,
+                        opacity: 1,
+                        segments: generateLightningPath()
+                    });
+                }
                 
                 score += scoreGain;
                 combo++;
@@ -805,6 +828,11 @@
                 life: p.life - 0.02
             })).filter(p => p.life > 0);
 
+            lightningBolts = lightningBolts.map(bolt => ({
+                ...bolt,
+                opacity: bolt.opacity - 0.05
+            })).filter(bolt => bolt.opacity > 0);
+
             drawGame();
             animationId = requestAnimationFrame(animate);
         }
@@ -828,6 +856,27 @@
             ctx.clearRect(0, 0, width, height);
             // Draw oscillating waveforms in background
             drawWaveforms(ctx, width, height);
+
+            lightningBolts.forEach(bolt => {
+                const centerX = bolt.lane * laneWidth + laneWidth / 2;
+        
+                ctx.strokeStyle = `rgba(255, 255, 255, ${bolt.opacity * 0.8})`;
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = `rgba(255, 255, 255, ${bolt.opacity})`;
+        
+                ctx.beginPath();
+                ctx.moveTo(centerX, 0);
+        
+                bolt.segments.forEach(seg => {
+                    const x = centerX + seg.x * laneWidth;
+                    const y = seg.y * height;
+                    ctx.lineTo(x, y);
+            });
+        
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        });
 
             // Draw lanes
             for (let i = 0; i < 4; i++) {
