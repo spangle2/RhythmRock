@@ -5,8 +5,8 @@ self.onmessage = async function(e) {
     try {
         const response = await fetch(audioFile);
         const arrayBuffer = await response.arrayBuffer();
+        const audioContext = new (AudioContext || webkitAudioContext)();
         
-        const audioContext = new OfflineAudioContext(1, 1, 44100);
         const buffer = await audioContext.decodeAudioData(arrayBuffer);
         
         const beats = detectBeatsSimple(buffer);
