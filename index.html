@@ -694,6 +694,11 @@
         function handleKeyDown(e) {
             const key = e.key.toUpperCase();
             const laneIndex = LANES.indexOf(key);
+
+            if (e.key === 'Escape') {
+                backToMenu();
+                return;
+            }
             
             if (laneIndex === -1 || pressedKeys[key]) return;
             
