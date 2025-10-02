@@ -332,6 +332,9 @@
         let audioElement = null;
         let animationId = null;
         let syncInterval = null;
+        let audioContext = null;
+        let analyser = null;
+        let waveformData = null;
 
         // Initialize
         window.addEventListener('load', loadSongs);
@@ -389,6 +392,7 @@
             });
         }
 
+        
         function detectBeats(buffer, sampleRate) {
             const channelData = buffer.getChannelData(0);
             const beats = [];
@@ -589,9 +593,21 @@
             if (audioElement) {
                 audioElement.pause();
             }
-            
+
+            // Setup audio context and analyser for waveforms
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048;
+            waveformData = new Uint8Array(analyser.frequencyBinCount);
+
             audioElement = new Audio(song.file);
+            const source = audioContext.createMediaElementSource(audioElement);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
             audioElement.play();
+            
+        
             
             syncInterval = setInterval(() => {
                 if (audioElement) {
@@ -612,9 +628,46 @@
             window.addEventListener('keyup', handleKeyUp);
         }
 
+        function drawWaveforms(ctx, width, height) {
+            if (!analyser || !waveformData) return;
+            
+            analyser.getByteTimeDomainData(waveformData);
+            
+            const numWaves = 3;
+            const centerY = height / 2;
+            
+            for (let wave = 0; wave < numWaves; wave++) {
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 - wave * 0.02})`;
+                ctx.lineWidth = 6 - wave * 1.5;
+                ctx.beginPath();
+                
+                const sliceWidth = width / waveformData.length;
+                const offsetY = (wave - 1) * 80;
+                const scale = (1 + wave * 0.3) * 0.8;
+                
+                for (let i = 0; i < waveformData.length; i++) {
+                    const v = waveformData[i] / 128.0;
+                    const y = centerY + offsetY + (v - 1) * (height / 4) * scale;
+                    const x = i * sliceWidth;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+        }
+
         function endGame() {
             if (audioElement) {
                 audioElement.pause();
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
             }
             if (animationId) {
                 cancelAnimationFrame(animationId);
@@ -759,6 +812,8 @@
             const fallTime = 2;
 
             ctx.clearRect(0, 0, width, height);
+            // Draw oscillating waveforms in background
+            drawWaveforms(ctx, width, height);
 
             // Draw lanes
             for (let i = 0; i < 4; i++) {
