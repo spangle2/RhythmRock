@@ -358,7 +358,7 @@
                         audio.load();
                     });
 
-                    const beats = await analyzeAudio(file);
+                    const beats = await analyzeAudio(file, songConfig[i].name);
                     
                     songs.push({
                         id: i + 1,
@@ -377,26 +377,34 @@
             displaySongs();
         }
 
-        async function analyzeAudio(audioFile) {
-            return new Promise((resolve, reject) => {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const request = new XMLHttpRequest();
-                
-                request.open('GET', audioFile, true);
-                request.responseType = 'arraybuffer';
-                
-                request.onload = () => {
-                    audioContext.decodeAudioData(request.response, (buffer) => {
-                        const beats = detectBeats(buffer, audioContext.sampleRate);
-                        audioContext.close();
-                        resolve(beats);
-                    }, reject);
-                };
-                
-                request.onerror = reject;
-                request.send();
-            });
-        }
+        async function analyzeAudio(audioFile, songName) {
+    return new Promise((resolve, reject) => {
+        const worker = new Worker('beat-analyzer.js');
+        
+        worker.onmessage = (e) => {
+            if (e.data.progress) {
+                // Update loading indicator with progress
+                const loadingText = document.querySelector('#loading-indicator p');
+                if (loadingText) {
+                    loadingText.textContent = `Analyzing ${songName}... ${e.data.percent}%`;
+                }
+            } else if (e.data.success) {
+                worker.terminate();
+                resolve(e.data.beats);
+            } else {
+                worker.terminate();
+                reject(new Error(e.data.error));
+            }
+        };
+        
+        worker.onerror = (error) => {
+            worker.terminate();
+            reject(error);
+        };
+        
+        worker.postMessage({ audioFile });
+    });
+}
 
         
         function detectBeats(buffer, sampleRate) {
