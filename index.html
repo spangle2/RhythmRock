@@ -404,8 +404,8 @@
             const beats = [];
             
             // Multi-band frequency analysis with proper FFT
-            const fftSize = 2048;
-            const hopSize = Math.floor(sampleRate * 0.02); // 20ms hops
+            const fftSize = 1024;
+            const hopSize = Math.floor(sampleRate * 0.04); // 20ms hops
             
             // Frequency bands (Hz ranges)
             const bands = [
