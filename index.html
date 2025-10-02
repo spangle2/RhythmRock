@@ -370,7 +370,7 @@
                         difficulty: beats.length < 50 ? 'Easy' : beats.length < 100 ? 'Medium' : 'Hard'
                     });
                 } catch (error) {
-                    console.error(`Failed to load ${songFiles[i]}:`, error);
+                    console.error(`Failed to load ${songConfig[i].file}:`, error);
                 }
             }
 
