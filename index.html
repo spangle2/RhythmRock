@@ -402,23 +402,20 @@
                         audio.addEventListener('error', reject);
                         audio.load();
                     });
-
-                    const beats = await analyzeAudio(file);
-                    
+                    // Don't analyze beats here - just store basic info
                     songs.push({
                         id: i + 1,
                         name: songConfig[i].name,
                         file: file,
                         image: songConfig[i].image,
                         duration: audio.duration,
-                        notes: beats,
-                        difficulty: beats.length < 50 ? 'Easy' : beats.length < 100 ? 'Medium' : 'Hard'
+                        notes: null, // Will be loaded when selected
+                        difficulty: 'Unknown' // Will be calculated after analysis
                     });
                 } catch (error) {
                     console.error(`Failed to load ${songConfig[i].file}:`, error);
                 }
             }
-
             displaySongs();
         }
 
@@ -627,16 +624,31 @@
             });
         }
 
-        function startGame(song) {
+        async function startGame(song) {
+            // Show loading screen while analyzing
+            showScreen('menu-screen');
+            document.getElementById('menu-content').style.display = 'none';
+            document.getElementById('loading-indicator').style.display = 'block';
+            document.querySelector('#loading-indicator p').textContent = `Analyzing ${song.name}...`;
+            
+            // Analyze beats if not already done
+            if (!song.notes) {
+                const beats = await analyzeAudio(song.file);
+                song.notes = beats;
+                song.difficulty = beats.length < 50 ? 'Easy' : beats.length < 100 ? 'Medium' : 'Hard';
+            }
+            
             currentSong = song;
             score = 0;
             combo = 0;
             maxCombo = 0;
+            missCount = 0;
             currentTime = 0;
             notes = song.notes.map(n => ({ ...n, hit: false }));
             feedback = [];
             particles = [];
             pressedKeys = {};
+            lightningBolts = [];
             
             document.getElementById('score').textContent = '0';
             document.getElementById('combo').textContent = '0';
@@ -660,8 +672,6 @@
             analyser.connect(audioContext.destination);
 
             audioElement.play();
-            
-        
             
             syncInterval = setInterval(() => {
                 if (audioElement) {
