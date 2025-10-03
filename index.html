@@ -601,28 +601,28 @@
         }
 
         function displaySongs() {
-            document.getElementById('loading-indicator').style.display = 'none';
-            document.getElementById('menu-content').style.display = 'block';
-            
-            const songList = document.getElementById('song-list');
-            songList.innerHTML = '';
-            
-            songs.forEach(song => {
-                const card = document.createElement('div');
-                card.className = 'song-card';
-                card.onclick = () => startGame(song);
-                card.innerHTML = `
-                    <img src="${song.image}" style="width: 80px; height: 80px; border-radius: 8px; float: left; margin-right: 20px; object-fit: cover;">
-                    <div style="overflow: hidden;">
-                        <div class="song-name">${song.name}</div>
-                        <div class="song-info">
-                            Difficulty: ${song.difficulty} • ${Math.floor(song.duration)}s • ${song.notes.length} notes
-                        </div>
-                    </div>
-                `;
-                songList.appendChild(card);
-            });
-        }
+    document.getElementById('loading-indicator').style.display = 'none';
+    document.getElementById('menu-content').style.display = 'block';
+    
+    const songList = document.getElementById('song-list');
+    songList.innerHTML = '';
+    
+    songs.forEach(song => {
+        const card = document.createElement('div');
+        card.className = 'song-card';
+        card.onclick = () => startGame(song);
+        card.innerHTML = `
+            <img src="${song.image}" style="width: 80px; height: 80px; border-radius: 8px; float: left; margin-right: 20px; object-fit: cover;">
+            <div style="overflow: hidden;">
+                <div class="song-name">${song.name}</div>
+                <div class="song-info">
+                    Difficulty: ${song.difficulty} • ${Math.floor(song.duration)}s
+                </div>
+            </div>
+        `;
+        songList.appendChild(card);
+    });
+}
 
         async function startGame(song) {
             // Show loading screen while analyzing
