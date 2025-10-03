@@ -356,7 +356,7 @@
             </div>
             <div class="buttons">
                 <button class="btn-primary" onclick="retryGame()">↻ Retry</button>
-                <button class="btn-secondary" onclick="backToMenu()">⌂ Menu</button>
+                <button class="btn-secondary" onclick="Menu()">⌂ Menu</button>
             </div>
         </div>
     </div>
@@ -1023,17 +1023,26 @@
         }
 
         function backToMenu() {
-            if (audioElement) {
-                audioElement.pause();
-            }
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-            if (syncInterval) {
-                clearInterval(syncInterval);
-            }
-            showScreen('menu-screen');
-        }
+    if (audioElement) {
+        audioElement.pause();
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
+    if (syncInterval) {
+        clearInterval(syncInterval);
+    }
+    
+    // Reset menu display properly
+    document.getElementById('loading-indicator').style.display = 'none';
+    document.getElementById('menu-content').style.display = 'block';
+    
+    showScreen('menu-screen');
+}
 
         window.addEventListener('resize', () => {
             if (document.getElementById('game-screen').classList.contains('active')) {
