@@ -157,7 +157,7 @@
             background: #1a1a1a;
         }
 
-        .score, .combo {
+        ., .combo {
             font-size: 24px;
             font-weight: bold;
         }
@@ -849,7 +849,7 @@
                 combo++;
                 maxCombo = Math.max(maxCombo, combo);
 
-                score = Math.max(0, score - missPenalty); // Don't go below 0
+                
                 
                 document.getElementById('score').textContent = score;
                 document.getElementById('combo').textContent = combo;
@@ -872,16 +872,27 @@
                     });
                 }
             } else {
-                combo = 0;
-                document.getElementById('combo').textContent = '0';
-                feedback.push({
-                    id: Date.now(),
-                    text: 'MISS',
-                    x: laneIndex,
-                    isMiss: true
-                });
-            }
-        }
+    combo = 0;
+    missCount++;
+    
+    // Penalty for missing
+    score = Math.max(0, score - missPenalty);
+    
+    document.getElementById('combo').textContent = '0';
+    document.getElementById('score').textContent = score;
+    
+    feedback.push({
+        id: Date.now(),
+        text: 'MISS',
+        x: laneIndex,
+        isMiss: true
+    });
+    
+    // Check if too many misses
+    if (missCount >= maxMisses) {
+        endGameEarly();
+    }
+}
 
         function handleKeyUp(e) {
             const key = e.key.toUpperCase();
