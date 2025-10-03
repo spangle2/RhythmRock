@@ -38,30 +38,37 @@
         }
         
         .song-list-container {
-            max-height: 400px;       /* adjust height to fit your menu */
-            overflow-y: auto;        /* vertical scroll */
-            padding-right: 10px;     /* spacing for scrollbar */
-            scroll-behavior: smooth; /* smooth scrolling */
+            max-height: calc(100vh - 400px); /* Dynamic height based on viewport */
+            overflow-y: auto;
+            padding-right: 10px;
+            scroll-behavior: smooth;
+            margin-top: 20px; /* Add spacing after subtitle */
+        }
+
+        .song-list-container {
+            scrollbar-width: thin;
+            scrollbar-color: #fff #111;
         }
 
         /* Custom scrollbar */
         .song-list-container::-webkit-scrollbar {
-                width: 10px;
+            width: 10px;
         }
 
         .song-list-container::-webkit-scrollbar-track {
-                background: #111;
-                border-radius: 5px;
+            background: #111;
+            border-radius: 5px;
         }
 
         .song-list-container::-webkit-scrollbar-thumb {
-                background: #fff;
-                border-radius: 5px;
+            background: #fff;
+            border-radius: 5px;
         }
 
         .song-list-container::-webkit-scrollbar-thumb:hover {
-                background: #ccc;
+            background: #ccc;
         }
+
 
 
         .title {
