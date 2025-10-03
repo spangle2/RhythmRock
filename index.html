@@ -800,11 +800,9 @@
 }
 
 
-        
         function handleKeyDown(e) {
             const key = e.key.toUpperCase();
             const laneIndex = LANES.indexOf(key);
-
             if (e.key === 'Escape') {
                 backToMenu();
                 return;
@@ -813,7 +811,6 @@
             if (laneIndex === -1 || pressedKeys[key]) return;
             
             pressedKeys[key] = true;
-
             const hitWindow = 0.15;
             const perfectWindow = 0.08;
             
@@ -822,20 +819,15 @@
                 n.lane === laneIndex && 
                 Math.abs(n.time - currentTime) < hitWindow
             );
-
             if (hitNotes.length > 0) {
                 const closestNote = hitNotes.reduce((prev, curr) => 
                     Math.abs(curr.time - currentTime) < Math.abs(prev.time - currentTime) ? curr : prev
                 );
-
                 const timeDiff = Math.abs(closestNote.time - currentTime);
                 const isPerfect = timeDiff < perfectWindow;
                 const scoreGain = isPerfect ? 100 : 50;
-
                 playHitSound(laneIndex, isPerfect);
-
                 closestNote.hit = true;
-
                 if (isPerfect && closestNote.intensity && closestNote.intensity > 1.0) {
                     lightningBolts.push({
                         id: Date.now(),
@@ -848,19 +840,16 @@
                 score += scoreGain;
                 combo++;
                 maxCombo = Math.max(maxCombo, combo);
-
                 
                 
                 document.getElementById('score').textContent = score;
                 document.getElementById('combo').textContent = combo;
-
                 feedback.push({
                     id: Date.now(),
                     text: isPerfect ? 'PERFECT!' : 'GOOD',
                     x: laneIndex,
                     isPerfect
                 });
-
                 for (let i = 0; i < 8; i++) {
                     particles.push({
                         id: Date.now() + i,
@@ -872,27 +861,28 @@
                     });
                 }
             } else {
-    combo = 0;
-    missCount++;
-    
-    // Penalty for missing
-    score = Math.max(0, score - missPenalty);
-    
-    document.getElementById('combo').textContent = '0';
-    document.getElementById('score').textContent = score;
-    
-    feedback.push({
-        id: Date.now(),
-        text: 'MISS',
-        x: laneIndex,
-        isMiss: true
-    });
-    
-    // Check if too many misses
-    if (missCount >= maxMisses) {
-        endGameEarly();
-    }
-}
+                combo = 0;
+                missCount++;
+                
+                // Penalty for missing
+                score = Math.max(0, score - missPenalty);
+                
+                document.getElementById('combo').textContent = '0';
+                document.getElementById('score').textContent = score;
+                
+                feedback.push({
+                    id: Date.now(),
+                    text: 'MISS',
+                    x: laneIndex,
+                    isMiss: true
+                });
+                
+                // Check if too many misses
+                if (missCount >= maxMisses) {
+                    endGameEarly();
+                }
+            }
+        }
 
         function handleKeyUp(e) {
             const key = e.key.toUpperCase();
