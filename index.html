@@ -363,6 +363,8 @@
 
     <script>
         const LANES = ['A', 'S', 'D', 'F'];
+        const maxMisses = 20; // Game over after 20 misses
+        const missPenalty = 20; // Lose 50 points per miss
         let songs = [];
         let currentSong = null;
         let score = 0;
@@ -380,7 +382,7 @@
         let analyser = null;
         let waveformData = null;
         let lightningBolts = [];
-
+        let missCount = 0;
         // Initialize
         window.addEventListener('load', loadSongs);
 
@@ -768,6 +770,37 @@
             showScreen('results-screen');
         }
 
+        function endGameEarly() {
+    if (audioElement) {
+        audioElement.pause();
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
+    if (syncInterval) {
+        clearInterval(syncInterval);
+    }
+    
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
+    
+    const accuracy = Math.round((score / (currentSong.notes.length * 100)) * 100);
+    
+    document.getElementById('results-title').textContent = 'GAME OVER!';
+    document.getElementById('results-song').textContent = currentSong.name + ' - Too many misses!';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('max-combo').textContent = maxCombo;
+    document.getElementById('accuracy').textContent = accuracy + '%';
+    
+    showScreen('results-screen');
+}
+
+
+        
         function handleKeyDown(e) {
             const key = e.key.toUpperCase();
             const laneIndex = LANES.indexOf(key);
@@ -815,6 +848,8 @@
                 score += scoreGain;
                 combo++;
                 maxCombo = Math.max(maxCombo, combo);
+
+                score = Math.max(0, score - missPenalty); // Don't go below 0
                 
                 document.getElementById('score').textContent = score;
                 document.getElementById('combo').textContent = combo;
